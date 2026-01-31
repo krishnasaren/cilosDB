@@ -1,257 +1,392 @@
-# HybridDB - Complete Project Structure
-
-## Directory Tree
+# HybridDB - Production-Grade Database System
+## Complete Project Structure
 
 ```
 HybridDB/
 │
-├── 📁 include/                       # C++ HEADERS
-│   └── hybriddb.h                    # Main database header (2500+ lines)
-│                                     # Contains: Server, Storage, WAL, Txn, Query, Network
-│
-├── 📁 src/                           # C++ SOURCE (ALL DATABASE LOGIC!)
+├── 📁 core/                          # C++ CORE DATABASE ENGINE
+│   ├── include/
+│   │   ├── storage/
+│   │   │   ├── page_manager.h        # Page-based storage (8KB pages)
+│   │   │   ├── buffer_pool.h         # LRU cache with pinning
+│   │   │   ├── wal_manager.h         # Write-Ahead Logging
+│   │   │   ├── btree_index.h         # B+ Tree indexing
+│   │   │   ├── hash_index.h          # Hash indexing
+│   │   │   ├── lsm_tree.h            # LSM Tree (like RocksDB)
+│   │   │   └── mvcc_manager.h        # Multi-Version Concurrency Control
+│   │   │
+│   │   ├── query/
+│   │   │   ├── parser.h              # SQL parser (Lemon/Yacc)
+│   │   │   ├── optimizer.h           # Query optimizer
+│   │   │   ├── executor.h            # Query executor
+│   │   │   ├── aggregation.h         # Aggregation functions
+│   │   │   └── join_executor.h       # Join algorithms (Hash, Merge, Nested Loop)
+│   │   │
+│   │   ├── transaction/
+│   │   │   ├── txn_manager.h         # Transaction manager
+│   │   │   ├── lock_manager.h        # 2PL locking
+│   │   │   ├── deadlock_detector.h   # Deadlock detection
+│   │   │   └── isolation_levels.h    # ACID isolation levels
+│   │   │
+│   │   ├── replication/
+│   │   │   ├── raft_consensus.h      # Raft consensus (like CockroachDB)
+│   │   │   ├── replication_log.h     # Replication log
+│   │   │   └── node_manager.h        # Cluster node management
+│   │   │
+│   │   ├── network/
+│   │   │   ├── tcp_server.h          # TCP server (epoll/kqueue)
+│   │   │   ├── http_server.h         # HTTP/REST API server
+│   │   │   ├── websocket_server.h    # WebSocket for real-time
+│   │   │   ├── protocol.h            # Binary protocol
+│   │   │   └── connection_pool.h     # Connection pooling
+│   │   │
+│   │   ├── document/
+│   │   │   ├── json_parser.h         # JSON document support
+│   │   │   ├── bson_handler.h        # BSON (like MongoDB)
+│   │   │   ├── document_store.h      # Document storage
+│   │   │   └── schema_validator.h    # Schema validation
+│   │   │
+│   │   ├── timeseries/
+│   │   │   ├── ts_compression.h      # Time-series compression (like InfluxDB)
+│   │   │   ├── ts_aggregation.h      # Time-series aggregation
+│   │   │   └── retention_policy.h    # Data retention policies
+│   │   │
+│   │   ├── graph/
+│   │   │   ├── graph_store.h         # Graph storage (like Neo4j)
+│   │   │   ├── cypher_parser.h       # Cypher query language
+│   │   │   └── graph_algorithms.h    # Graph traversal algorithms
+│   │   │
+│   │   ├── cache/
+│   │   │   ├── redis_compatible.h    # Redis-compatible cache
+│   │   │   ├── cache_eviction.h      # LRU/LFU eviction
+│   │   │   └── pub_sub.h             # Pub/Sub messaging
+│   │   │
+│   │   ├── search/
+│   │   │   ├── full_text_index.h     # Full-text search (like Elasticsearch)
+│   │   │   ├── inverted_index.h      # Inverted index
+│   │   │   └── search_ranking.h      # Search ranking algorithms
+│   │   │
+│   │   ├── security/
+│   │   │   ├── authentication.h      # User authentication
+│   │   │   ├── authorization.h       # Role-based access control
+│   │   │   ├── encryption.h          # AES-256 encryption
+│   │   │   └── ssl_handler.h         # SSL/TLS support
+│   │   │
+│   │   ├── monitoring/
+│   │   │   ├── metrics.h             # Performance metrics
+│   │   │   ├── query_stats.h         # Query statistics
+│   │   │   └── health_checker.h      # Health monitoring
+│   │   │
+│   │   ├── utils/
+│   │   │   ├── thread_pool.h         # Thread pool
+│   │   │   ├── memory_pool.h         # Memory allocator
+│   │   │   ├── logging.h             # Structured logging
+│   │   │   ├── config_manager.h      # Configuration
+│   │   │   └── serialization.h       # Data serialization
+│   │   │
+│   │   └── hybriddb.h                # Main header
+│   │
+│   ├── src/
+│   │   ├── storage/                  # Storage implementations
+│   │   ├── query/                    # Query engine
+│   │   ├── transaction/              # Transaction management
+│   │   ├── replication/              # Replication & clustering
+│   │   ├── network/                  # Network layer
+│   │   ├── document/                 # Document store
+│   │   ├── timeseries/               # Time-series
+│   │   ├── graph/                    # Graph database
+│   │   ├── cache/                    # Cache layer
+│   │   ├── search/                   # Search engine
+│   │   ├── security/                 # Security
+│   │   ├── monitoring/               # Monitoring
+│   │   └── utils/                    # Utilities
+│   │
 │   ├── server/
-│   │   └── main.cpp                  # Server + Network + Admin HTTP (800+ lines)
-│   └── storage/
-│       └── storage.cpp               # Storage + Buffer + WAL + Txn (600+ lines)
+│   │   └── main.cpp                  # Main server entry point
+│   │
+│   └── CMakeLists.txt                # Build configuration
 │
-├── 📁 client-libs/                   # THIN CLIENT LIBRARIES (Socket wrappers only)
+├── 📁 client-libs/                   # THIN CLIENT LIBRARIES
 │   ├── php/
-│   │   └── HybridDB.php              # PHP client (200 lines, socket only)
+│   │   ├── HybridDB.php              # PHP client (socket wrapper)
+│   │   └── README.md
+│   │
 │   ├── python/
-│   │   └── hybriddb.py               # Python client (150 lines, socket only)
-│   ├── cpp/                          # (To be implemented)
-│   ├── java/                         # (To be implemented)
-│   └── nodejs/                       # (To be implemented)
+│   │   ├── hybriddb/
+│   │   │   ├── __init__.py
+│   │   │   ├── client.py             # Python client
+│   │   │   ├── connection.py         # Connection handling
+│   │   │   └── types.py              # Type definitions
+│   │   ├── setup.py
+│   │   └── README.md
+│   │
+│   ├── nodejs/
+│   │   ├── src/
+│   │   │   ├── index.js              # Node.js client
+│   │   │   ├── connection.js
+│   │   │   └── protocol.js
+│   │   ├── package.json
+│   │   └── README.md
+│   │
+│   ├── java/
+│   │   ├── src/main/java/com/hybriddb/
+│   │   │   ├── HybridDBClient.java   # Java client
+│   │   │   ├── Connection.java
+│   │   │   └── Protocol.java
+│   │   ├── pom.xml
+│   │   └── README.md
+│   │
+│   └── cpp/
+│       ├── include/
+│       │   └── hybriddb_client.h     # C++ client library
+│       ├── src/
+│       │   └── client.cpp
+│       └── CMakeLists.txt
 │
 ├── 📁 web/                           # WEB INTERFACES
-│   ├── admin/
-│   │   └── index.html                # Admin panel (connects to C++ HTTP:8080)
-│   │                                 # Real-time stats from C++ server
-│   └── user/
-│       ├── index.php                 # User login/register
+│   ├── admin/                        # ADMIN PANEL
+│   │   ├── index.html                # Main dashboard
+│   │   ├── css/
+│   │   │   └── admin.css             # Modern UI styles
+│   │   ├── js/
+│   │   │   ├── dashboard.js          # Dashboard logic
+│   │   │   ├── tables.js             # Table management
+│   │   │   ├── queries.js            # Query interface
+│   │   │   ├── monitoring.js         # Real-time monitoring
+│   │   │   ├── users.js              # User management
+│   │   │   └── charts.js             # Chart.js integration
+│   │   └── components/
+│   │       ├── sidebar.html
+│   │       ├── header.html
+│   │       └── footer.html
+│   │
+│   └── user/                         # USER APPLICATION
+│       ├── index.php                 # Login/Register
 │       ├── dashboard.php             # User dashboard
-│       └── logout.php                # Logout
+│       ├── profile.php               # User profile
+│       ├── logout.php                # Logout
+│       ├── css/
+│       │   └── user.css              # User UI styles
+│       └── js/
+│           └── app.js                # User app logic
 │
-├── 📁 data/                          # DATABASE STORAGE (created at runtime)
-│   ├── tables/                       # Binary .dat files (8KB pages)
-│   ├── wal/                          # Write-ahead log files
-│   ├── indexes/                      # Index files (B+ trees)
-│   └── metadata/                     # Catalog and metadata
+├── 📁 tools/                         # C++ COMMAND-LINE TOOLS
+│   ├── cli/
+│   │   ├── main.cpp                  # Interactive CLI
+│   │   ├── commands.cpp              # CLI commands
+│   │   └── CMakeLists.txt
+│   │
+│   ├── backup/
+│   │   ├── backup.cpp                # Backup utility
+│   │   ├── restore.cpp               # Restore utility
+│   │   └── CMakeLists.txt
+│   │
+│   ├── migration/
+│   │   ├── migrate.cpp               # Schema migration
+│   │   └── CMakeLists.txt
+│   │
+│   └── benchmark/
+│       ├── benchmark.cpp             # Performance benchmarks
+│       └── CMakeLists.txt
 │
-├── 📁 tools/                         # TOOLS (to be implemented)
-│   ├── cli/                          # Command-line interface
-│   └── backup/                       # Backup utility
-│
-├── 📁 tests/                         # TESTS (to be implemented)
+├── 📁 tests/                         # C++ UNIT TESTS
+│   ├── storage/
+│   ├── query/
+│   ├── transaction/
+│   └── CMakeLists.txt
 │
 ├── 📁 docs/                          # DOCUMENTATION
+│   ├── architecture.md
+│   ├── api-reference.md
+│   ├── getting-started.md
+│   ├── performance-tuning.md
+│   └── deployment-guide.md
 │
-├── 📁 config/                        # CONFIGURATION FILES
+├── 📁 config/                        # CONFIGURATION
+│   ├── hybriddb.conf                 # Main config
+│   ├── replication.conf              # Replication config
+│   └── security.conf                 # Security config
 │
-├── 📄 CMakeLists.txt                 # Build system
+├── 📁 data/                          # RUNTIME DATA (Created automatically)
+│   ├── tables/                       # Table files
+│   ├── wal/                          # WAL files
+│   ├── indexes/                      # Index files
+│   ├── metadata/                     # Metadata
+│   └── logs/                         # Server logs
+│
+├── 📄 CMakeLists.txt                 # Root build file
 ├── 📄 README.md                      # Main documentation
-└── 📄 PROJECT_STRUCTURE.md           # This file
+├── 📄 LICENSE                        # License file
+└── 📄 .gitignore                     # Git ignore
+
 ```
 
-## File Breakdown
+## Key Features Implementation
 
-### Core C++ Files (3900+ lines total)
+### 1. **Storage Engine** (C++)
+- **Page-based storage**: 8KB pages with checksums
+- **Buffer pool**: LRU caching with 512MB default
+- **WAL**: Write-Ahead Logging for durability
+- **MVCC**: Multi-Version Concurrency Control
+- **Indexes**: B+ Tree, Hash, LSM Tree
+- **Compression**: Snappy/LZ4 compression
 
-1. **include/hybriddb.h** (2500 lines)
-   - All class definitions
-   - Type system
-   - Storage structures
-   - Network protocol
-   - Complete architecture
+### 2. **Query Engine** (C++)
+- **SQL Parser**: Full SQL support (SELECT, INSERT, UPDATE, DELETE, JOIN)
+- **Query Optimizer**: Cost-based optimizer
+- **Execution Engine**: Volcano-style iterator model
+- **Aggregations**: SUM, AVG, COUNT, MIN, MAX, GROUP BY
+- **Joins**: Hash Join, Merge Join, Nested Loop Join
 
-2. **src/storage/storage.cpp** (600 lines)
-   - StorageEngine implementation
-   - BufferPool implementation
-   - WALManager implementation
-   - TransactionManager implementation
-   - Value serialization
+### 3. **Transaction Management** (C++)
+- **ACID Compliance**: Full ACID guarantees
+- **Isolation Levels**: Read Uncommitted, Read Committed, Repeatable Read, Serializable
+- **Locking**: 2PL with deadlock detection
+- **MVCC**: Multi-version concurrency control
 
-3. **src/server/main.cpp** (800 lines)
-   - NetworkManager (socket server)
-   - ClientConnection (client handler)
-   - AdminInterface (HTTP server)
-   - Server (main class)
-   - main() entry point
+### 4. **Replication & Clustering** (C++)
+- **Raft Consensus**: Leader election and log replication
+- **Multi-master**: Write to any node
+- **Automatic failover**: High availability
+- **Sharding**: Horizontal partitioning
 
-### Client Libraries (350 lines total)
+### 5. **Document Store** (C++)
+- **JSON/BSON**: Native JSON support like MongoDB
+- **Schema-less**: Flexible schema
+- **Nested documents**: Deep nesting support
+- **Array operations**: Array queries and updates
 
-1. **client-libs/php/HybridDB.php** (200 lines)
-   - Socket connection
-   - Message serialization
-   - Query helpers
-   - Transaction methods
-   - **NO business logic** - just communication!
+### 6. **Time-Series** (C++)
+- **Compression**: Time-series specific compression
+- **Downsampling**: Automatic data aggregation
+- **Retention policies**: Auto-delete old data
+- **Time-based queries**: Efficient time-range queries
 
-2. **client-libs/python/hybriddb.py** (150 lines)
-   - Socket connection
-   - Message serialization
-   - Query helpers
-   - Transaction methods
-   - **NO business logic** - just communication!
+### 7. **Graph Database** (C++)
+- **Property graph**: Nodes and edges with properties
+- **Cypher queries**: Neo4j-compatible queries
+- **Graph algorithms**: BFS, DFS, shortest path
+- **Index-free adjacency**: Fast traversals
 
-### Web Interfaces (600 lines total)
+### 8. **Cache Layer** (C++)
+- **Redis-compatible**: Compatible with Redis protocol
+- **In-memory**: Ultra-fast access
+- **Eviction policies**: LRU, LFU, TTL
+- **Pub/Sub**: Real-time messaging
 
-1. **web/admin/index.html** (200 lines)
-   - Admin dashboard UI
-   - JavaScript to fetch stats from C++ HTTP server
-   - Real-time updates
-   - Server monitoring
+### 9. **Search Engine** (C++)
+- **Full-text search**: Elasticsearch-like search
+- **Inverted index**: Fast text search
+- **Ranking**: TF-IDF, BM25 ranking
+- **Analyzers**: Tokenization and stemming
 
-2. **web/user/index.php** (200 lines)
-   - User login/register
-   - Uses HybridDB PHP client
-   - Session management
-   - Beautiful UI
+### 10. **Security** (C++)
+- **Authentication**: Username/password, API keys
+- **Authorization**: Role-based access control
+- **Encryption**: AES-256 at rest, TLS in transit
+- **Audit logging**: Security event logging
 
-3. **web/user/dashboard.php** (200 lines)
-   - User dashboard
-   - Profile display
-   - Session info
+### 11. **Monitoring** (C++)
+- **Metrics**: Prometheus-compatible metrics
+- **Query stats**: Slow query logging
+- **Health checks**: Liveness and readiness probes
+- **Alerting**: Threshold-based alerts
 
-## Component Responsibilities
+### 12. **Network Layer** (C++)
+- **TCP Server**: High-performance TCP with epoll/kqueue
+- **HTTP/REST API**: RESTful API for web clients
+- **WebSocket**: Real-time updates
+- **Connection pooling**: Efficient connection management
 
-### C++ Server (ALL THE LOGIC!)
-```
-✓ Binary storage (8KB pages)
-✓ Buffer pool caching
-✓ Write-ahead logging
-✓ Transaction management (ACID)
-✓ Query execution
-✓ Socket server (TCP port 5432)
-✓ HTTP server (port 8080)
-✓ Multi-client handling
-✓ Thread safety
-✓ Data persistence
-```
+## Client Libraries (Thin Wrappers)
 
-### Client Libraries (JUST COMMUNICATION!)
-```
-✓ TCP socket connection
-✓ Message serialization/deserialization
-✓ Protocol handling
-✓ Helper methods for SQL
-✗ NO business logic
-✗ NO data processing
-✗ NO storage management
-```
-
-### Admin Panel (MONITORING!)
-```
-✓ Connect to C++ HTTP server (port 8080)
-✓ Display real-time stats
-✓ Show active connections
-✓ List database tables
-✓ Server information
-✗ Does NOT process data
+### PHP Client
+```php
+$db = new HybridDB('localhost', 5432);
+$db->query("SELECT * FROM users WHERE age > 18");
+$db->insert('users', ['name' => 'John', 'age' => 25]);
+$db->beginTransaction();
+$db->commit();
 ```
 
-### User Web App (EXAMPLE APPLICATION!)
-```
-✓ User registration/login
-✓ Uses HybridDB for storage
-✓ Session management
-✓ Dashboard UI
-✗ Completely separate from admin
-✗ Just an example of using HybridDB
-```
-
-## Data Flow
-
-### Query Execution
-```
-PHP Code:
-$db->query("SELECT * FROM users");
-    │
-    ▼
-PHP Client:
-Send via socket: [MSG_QUERY][length]["SELECT * FROM users"]
-    │
-    ▼
-C++ Server:
-1. Receive message
-2. Parse SQL
-3. Execute query
-4. Read from storage
-5. Return results
-    │
-    ▼
-PHP Client:
-Receive via socket: [MSG_RESULT][length][JSON data]
-    │
-    ▼
-PHP Code:
-Returns array of rows
+### Python Client
+```python
+db = HybridDB('localhost', 5432)
+db.query("SELECT * FROM users WHERE age > 18")
+db.insert('users', {'name': 'John', 'age': 25})
+db.begin_transaction()
+db.commit()
 ```
 
-### Transaction Flow
-```
-PHP: $db->begin();
-  ↓
-C++ Server: Creates transaction object, assigns ID
-  ↓
-PHP: $db->insert('users', [...]);
-  ↓
-C++ Server: Adds to transaction undo log
-  ↓
-PHP: $db->commit();
-  ↓
-C++ Server: Writes to WAL, commits transaction
-  ↓
-PHP: Returns success
+### Node.js Client
+```javascript
+const db = new HybridDB('localhost', 5432);
+await db.query("SELECT * FROM users WHERE age > 18");
+await db.insert('users', {name: 'John', age: 25});
+await db.beginTransaction();
+await db.commit();
 ```
 
-## Build and Run
+## Web Interfaces
 
-### Compile C++
+### 1. Admin Panel (http://localhost:8080)
+**Features:**
+- Real-time dashboard with metrics
+- Table browser and editor
+- Query interface with syntax highlighting
+- User management
+- Performance monitoring
+- Cluster management
+- Backup/restore interface
+
+**Technology:**
+- HTML5 + CSS3 (modern design)
+- JavaScript (ES6+)
+- Chart.js for visualizations
+- WebSocket for real-time updates
+- Connects to C++ HTTP server
+
+### 2. User Application (http://localhost:3000)
+**Features:**
+- User registration and login
+- Personal dashboard
+- Profile management
+- Data visualization
+- Session management
+
+**Technology:**
+- PHP backend
+- HTML5 + CSS3
+- JavaScript (ES6+)
+- Uses HybridDB PHP client library
+- Connects to C++ database server
+
+## Performance Targets
+
+- **Throughput**: 100,000+ queries/second
+- **Latency**: <1ms for simple queries
+- **Concurrency**: 10,000+ concurrent connections
+- **Scalability**: Horizontal scaling to 100+ nodes
+- **Availability**: 99.99% uptime
+- **Durability**: Zero data loss with WAL
+
+## Build and Deploy
+
 ```bash
+# Build C++ core
 mkdir build && cd build
 cmake ..
-cmake --build . --config Release
+make -j$(nproc)
+
+# Run server
+./hybriddb-server -c ../config/hybriddb.conf
+
+# Run CLI
+./hybriddb-cli -h localhost -p 5432
+
+# Run tests
+make test
 ```
 
-### Start Server
-```bash
-./hybriddb-server -p 5432 -a 8080 -d ./data
-```
-
-### Use Admin Panel
-```
-http://localhost:8080/
-```
-
-### Use Web App
-```bash
-cd web/user
-php -S localhost:3000
-# Access: http://localhost:3000
-```
-
-### Use PHP Client
-```php
-<?php
-require 'client-libs/php/HybridDB.php';
-$db = new HybridDB('localhost', 5432);
-$db->query("CREATE TABLE test (id INTEGER)");
-?>
-```
-
-## Key Differences from Toy Systems
-
-| Feature | This System | Toy System |
-|---------|-------------|------------|
-| Core Logic | ✅ C++ (4000+ lines) | ❌ PHP/Python |
-| Storage | ✅ Binary pages | ❌ JSON files |
-| Clients | ✅ Thin sockets | ❌ Direct calls |
-| Performance | ✅ High (C++) | ❌ Low (interpreted) |
-| Scalability | ✅ Multi-client | ❌ Single client |
-| Real DB | ✅ Yes | ❌ No |
-
----
-
-**This is a REAL database written in C++, not a toy!**
+## License
+MIT License
