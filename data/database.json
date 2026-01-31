@@ -1,0 +1,41 @@
+{
+    "name": "hybriddb",
+    "tables": {
+        "users": {
+            "name": "users",
+            "documentMode": true,
+            "schema": [],
+            "rows": [
+                {
+                    "_id": "697cd12a76e1b5.10276844530782922a6f3e9f",
+                    "_version": 1,
+                    "_created_at": "2026-01-30 16:41:30",
+                    "_updated_at": "2026-01-30 16:41:30",
+                    "data": {
+                        "username": "google",
+                        "email": "k@gmail.com",
+                        "password": "$2y$10$zr.Az6y4SfzuXPHxg0wJk.4U40n82fjYixqKzArulSVdh4ApGdyKq",
+                        "created_at": "2026-01-30 16:41:30",
+                        "role": "user"
+                    }
+                },
+                {
+                    "_id": "697cd378bf04f6.6452965079006195035fc297",
+                    "_version": 1,
+                    "_created_at": "2026-01-30 16:51:20",
+                    "_updated_at": "2026-01-30 16:51:20",
+                    "data": {
+                        "username": "nj",
+                        "email": "k@gmail.com",
+                        "password": "$2y$10$AIn6aq9I51ZZVW.QSf70H.g2bKmGSD5m0pou.EgdBs3m59Ii2gD5G",
+                        "created_at": "2026-01-30 16:51:20",
+                        "role": "user"
+                    }
+                }
+            ],
+            "indexes": [],
+            "created_at": "2026-01-30 16:38:59"
+        }
+    },
+    "timestamp": "2026-01-30 16:51:20"
+}

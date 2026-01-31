@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HybridDB Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1d2e;
+            color: #fff;
+        }
+
+        .header {
+            background: #22273b;
+            padding: 20px 40px;
+            border-bottom: 2px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: #22273b;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #2d3548;
+        }
+
+        .stat-value {
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            color: #a0aec0;
+            font-size: 14px;
+        }
+
+        .card {
+            background: #22273b;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid #2d3548;
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #2d3548;
+        }
+
+        th {
+            background: #1a1d2e;
+            color: #a0aec0;
+            font-weight: 600;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #43e97b;
+            color: #000;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #a0aec0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🔧 HybridDB Admin Panel</h1>
+        <div>
+            <button class="btn btn-primary" onclick="loadStats()">Refresh Stats</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Statistics -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="total-queries">Loading...</div>
+                <div class="stat-label">Total Queries</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="active-connections">Loading...</div>
+                <div class="stat-label">Active Connections</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="cache-hit-rate">Loading...</div>
+                <div class="stat-label">Cache Hit Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="uptime">Loading...</div>
+                <div class="stat-label">Uptime (seconds)</div>
+            </div>
+        </div>
+
+        <!-- Tables List -->
+        <div class="card">
+            <h2>Database Tables</h2>
+            <div id="tables-list">
+                <div class="loading">Loading tables...</div>
+            </div>
+        </div>
+
+        <!-- Server Info -->
+        <div class="card">
+            <h2>Server Information</h2>
+            <table>
+                <tr>
+                    <th>Property</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Version</td>
+                    <td>1.0.0</td>
+                </tr>
+                <tr>
+                    <td>Engine</td>
+                    <td>C++ Binary Storage</td>
+                </tr>
+                <tr>
+                    <td>Database Port</td>
+                    <td>5432</td>
+                </tr>
+                <tr>
+                    <td>Admin Port</td>
+                    <td>8080</td>
+                </tr>
+                <tr>
+                    <td>Page Size</td>
+                    <td>8192 bytes</td>
+                </tr>
+                <tr>
+                    <td>Buffer Pool</td>
+                    <td>512 MB</td>
+                </tr>
+                <tr>
+                    <td>Status</td>
+                    <td><span class="status-badge status-active">RUNNING</span></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Load stats from C++ HTTP server (port 8080)
+        async function loadStats() {
+            try {
+                const response = await fetch('http://localhost:8080/api/stats');
+                const data = await response.json();
+
+                document.getElementById('total-queries').textContent = data.totalQueries || '0';
+                document.getElementById('active-connections').textContent = data.activeConnections || '0';
+                document.getElementById('cache-hit-rate').textContent = ((data.cacheHitRate || 0) * 100).toFixed(1) + '%';
+                document.getElementById('uptime').textContent = data.uptime || '0';
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+                document.querySelectorAll('.stat-value').forEach(el => {
+                    el.textContent = 'N/A';
+                });
+            }
+        }
+
+        // Load tables from C++ HTTP server
+        async function loadTables() {
+            try {
+                const response = await fetch('http://localhost:8080/api/tables');
+                const data = await response.json();
+
+                if (data && data.tables) {
+                    let html = '<table><tr><th>Table Name</th><th>Rows</th><th>Type</th></tr>';
+                    data.tables.forEach(table => {
+                        html += `<tr>
+                            <td>${table.name}</td>
+                            <td>${table.rows || 0}</td>
+                            <td>${table.type || 'relational'}</td>
+                        </tr>`;
+                    });
+                    html += '</table>';
+                    document.getElementById('tables-list').innerHTML = html;
+                } else {
+                    document.getElementById('tables-list').innerHTML = '<p>No tables found</p>';
+                }
+            } catch (error) {
+                console.error('Failed to load tables:', error);
+                document.getElementById('tables-list').innerHTML =
+                    '<p style="color: #dc3545;">Failed to connect to C++ server on port 8080</p>';
+            }
+        }
+
+        // Auto-refresh every 5 seconds
+        setInterval(() => {
+            loadStats();
+            loadTables();
+        }, 5000);
+
+        // Initial load
+        loadStats();
+        loadTables();
+    </script>
+</body>
+
+</html>
